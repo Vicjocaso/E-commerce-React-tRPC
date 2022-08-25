@@ -2,39 +2,87 @@ import express from "express";
 import * as trpc from "@trpc/server";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import cors from "cors";
-import getUser from "./user";
-import { z } from "zod";
+import { infer, z } from "zod";
+import connectToMongoDb from "./DB/config";
+import ProductModel, { AddProduct } from "./Models/Product";
 
-interface ChatMessage {
-  user: string;
-  message: string;
-}
+const getProducts = async () => {
+  try {
+    const products = await ProductModel.find();
+    return products;
+  } catch (e) {
+    console.log(e);
+  }
+};
 
-const messages: ChatMessage[] = [];
+const getProductsById = async (id) => {
+  try {
+    const products = await ProductModel.findById(id);
+    console.log(products);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const createProduct = async (product: AddProduct) => {
+  try {
+    const products = new ProductModel(product);
+
+    products.save();
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const updateProductById = async (product: AddProduct) => {
+  try {
+    ProductModel.findOneAndUpdate(
+      { name: product.name }, // Why field do you want to look for it.
+      { name: "Iphone 12" }, // What do you want to replace.
+      (err, docs) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Updated : ", docs);
+        }
+      }
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const deleteProductById = async (id) => {
+  try {
+    ProductModel.findByIdAndDelete(id, (err, docs) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("Deleted : ", docs);
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const appRouter = trpc
   .router()
-  .query("karla", {
+  .query("getProducts", {
     resolve() {
-      return {
-        name: "karla",
-        lasName: "Calderon",
-      };
+      return getProducts();
     },
   })
-  .query("getMessages", {
-    input: z.number().default(10),
-    resolve({ input }) {
-      return messages.slice(-input);
-    },
-  })
-  .mutation("addMessages", {
+  .mutation("addProduct", {
     input: z.object({
-      user: z.string(),
-      message: z.string(),
+      name: z.string(),
+      description: z.string(),
+      price: z.number(),
+      countInStock: z.number(),
+      urlImage: z.string(),
     }),
     resolve({ input }) {
-      messages.push(input);
+      createProduct(input);
       return "Messages added successfully";
     },
   });
@@ -58,3 +106,13 @@ app.use(
 app.listen(port, () => {
   console.log(`api-service listening at http://localhost:${port}`);
 });
+
+connectToMongoDb();
+
+const product = {
+  name: "Iphone 13",
+  description: "localhost",
+  price: 99,
+  countInStock: 2,
+  urlImage: "localhost",
+};

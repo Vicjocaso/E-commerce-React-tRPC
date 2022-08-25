@@ -1,64 +1,90 @@
 import React, { useState } from "react";
 import { trpc } from "./utils/trpc";
 import { QueryClient } from "react-query";
+import { Product } from "./models";
 
 export const client = new QueryClient();
 
 export const Test = () => {
-  const [user, setUser] = useState("");
-  const [message, setMessage] = useState("");
+  const [product, setProduct] = useState<Product>({});
 
-  const getMessages = trpc.useQuery(["getMessages"]);
-  const addMessages = trpc.useMutation(["addMessages"]);
-  const onAdd = async () => {
-    addMessages.mutate(
+  const getProducts = trpc.useQuery(["getProducts"]);
+  const addProduct = trpc.useMutation(["addProduct"]);
+
+  const onAddProduct = async () => {
+    addProduct.mutate(
       {
-        user,
-        message,
+        name: product.name!,
+        description: product.description!,
+        price: Number(product.price)!,
+        countInStock: Number(product.countInStock)!,
+        urlImage: product.urlImage!,
       },
       {
         onSuccess: async () => {
-          await client.invalidateQueries(["getMessages"]);
+          await client.invalidateQueries(["getProducts"]);
         },
       }
     );
-    setUser("");
-    setMessage("");
   };
+
+  const onchange = (e) => {
+    const { name, value } = e.target;
+    setProduct((prevSate) => ({ ...prevSate, [name]: value }));
+    console.log(product);
+  };
+
   return (
     <div className="mt-10 text-3xl mx-auto max-w-6xl ">
-      <div>
-        {(getMessages.data ?? []).map((x) => {
-          return (
-            <div
-              key={x.user}
-              className="flex justify-center  mt-9 text-3xl max-w-6xl mx-auto"
-            >
-              {x.user} {x.message}
-            </div>
-          );
-        })}
-      </div>
+      <div>{JSON.stringify(getProducts.data)}</div>
       <div className="flex justify-center">
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onAdd();
+
+            onAddProduct();
+            console.log(product);
           }}
         >
           <input
             type="text"
-            value={user}
+            name="name"
+            value={product.name}
             className="border-2 mr-4 h-10 border-gray-300 rounded-lg"
-            onChange={(e) => setUser(e.target.value)}
-            placeholder="user kk"
+            onChange={onchange}
+            placeholder="name"
           />
           <input
             type="text"
-            value={message}
+            name="description"
+            value={product.description}
             className="border-2 h-10 mr-4 border-gray-300 rounded-lg"
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="message"
+            onChange={onchange}
+            placeholder="description"
+          />
+          <input
+            type="text"
+            name="price"
+            value={product.price}
+            className="border-2 h-10 mr-4 border-gray-300 rounded-lg"
+            onChange={onchange}
+            placeholder="price"
+          />
+          <input
+            type="text"
+            name="countInStock"
+            value={product.countInStock}
+            className="border-2 h-10 mr-4 border-gray-300 rounded-lg"
+            onChange={onchange}
+            placeholder="countInStock"
+          />
+          <input
+            type="text"
+            name="urlImage"
+            value={product.urlImage}
+            className="border-2 h-10 mr-4 border-gray-300 rounded-lg"
+            onChange={onchange}
+            placeholder="urlImage"
           />
           <div>
             <button className="relative flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
